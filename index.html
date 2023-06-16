@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      canvas {
+        border: 1px solid black;
+      }
+      .center {
+        text-align: center;
+      }
+    </style>
+    <title>Document</title>
+  </head>
+  <body>
+    <div class="center">
+      <h1>Bubbles App</h1>
+      <canvas id="myCanvas" width="700" height="500"></canvas>
+      <button onclick="resetCanvas()">Reset</button>
+    </div>
+    <script>
+      // Get the canvas element and its 2D context
+      const canvas = document.getElementById("myCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Define the initial state of the application
+      let circles = [
+        { x: 100, y: 100, color: "red", hit: false },
+        { x: 100, y: 200, color: "blue", hit: false },
+        { x: 100, y: 300, color: "green", hit: false },
+        { x: 100, y: 400, color: "orange", hit: false },
+      ];
+
+      const allArrows = [
+        {
+          x: 580,
+          y: 100,
+          targetX: 130,
+          targetY: 100,
+          moving: false,
+        },
+        {
+          x: 580,
+          y: 200,
+          targetX: 130,
+          targetY: 200,
+          moving: false,
+        },
+        {
+          x: 580,
+          y: 300,
+          targetX: 130,
+          targetY: 300,
+          moving: false,
+        },
+        {
+          x: 580,
+          y: 400,
+          targetX: 130,
+          targetY: 400,
+          moving: false,
+        },
+      ];
+
+      let arrows = [
+        {
+          x: 560,
+          y: 100,
+          targetX: 580,
+          targetY: 100,
+          moving: false,
+        },
+        {
+          x: 560,
+          y: 200,
+          targetX: 580,
+          targetY: 200,
+          moving: false,
+        },
+        {
+          x: 560,
+          y: 300,
+          targetX: 580,
+          targetY: 300,
+          moving: false,
+        },
+        {
+          x: 560,
+          y: 400,
+          targetX: 580,
+          targetY: 400,
+          moving: false,
+        },
+      ];
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the circles
+        circles.forEach((circle) => {
+          ctx.beginPath();
+          ctx.arc(circle.x, circle.y, 30, 0, Math.PI * 2);
+          ctx.fillStyle = circle.color;
+          ctx.fill();
+          ctx.closePath();
+        });
+        arrows.forEach((arrow) => {
+          ctx.beginPath();
+          ctx.moveTo(arrow.x + 30, arrow.y);
+          ctx.lineTo(arrow.targetX + 20, arrow.targetY);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.closePath();
+          const angle = Math.atan2(
+            arrow.targetY - arrow.y,
+            arrow.targetX - arrow.x
+          );
+
+          // Draw the arrowhead
+          ctx.save();
+          ctx.translate(arrow.targetX, arrow.targetY);
+          ctx.rotate(angle + 3.14);
+
+          ctx.beginPath();
+          ctx.moveTo(-10, -5);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(-10, 5);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+          ctx.fillStyle = "black";
+          ctx.stroke();
+          ctx.fill();
+          ctx.closePath();
+
+          ctx.restore();
+        });
+      }
+
+      // Function to reDraw the circles and arrows
+      function reDraw() {
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw the circles
+        circles.forEach((circle) => {
+          ctx.beginPath();
+          ctx.arc(circle.x, circle.y, 30, 0, Math.PI * 2);
+          ctx.fillStyle = circle.color;
+          ctx.fill();
+          ctx.closePath();
+        });
+
+        // Draw the arrows
+        arrows.forEach((arrow) => {
+          ctx.beginPath();
+          ctx.moveTo(arrow.x, arrow.y);
+          ctx.lineTo(arrow.targetX, arrow.targetY);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          ctx.closePath();
+
+          // Draw the arrowhead
+          const angle = Math.atan2(
+            arrow.targetY - arrow.y,
+            arrow.targetX - arrow.x
+          );
+          console.log(angle);
+
+          ctx.save();
+          ctx.translate(arrow.targetX, arrow.targetY);
+          ctx.rotate(angle);
+
+          ctx.beginPath();
+          ctx.moveTo(-10, -5);
+          ctx.lineTo(0, 0);
+          ctx.lineTo(-10, 5);
+          ctx.strokeStyle = "black";
+          ctx.lineWidth = 2;
+          ctx.fillStyle = "black";
+          ctx.stroke();
+          ctx.fill();
+          ctx.closePath();
+
+          ctx.restore();
+        });
+      }
+
+      // Function to handle click events inside circles
+      function handleCircleClick(event) {
+        const clickX = event.offsetX;
+        const clickY = event.offsetY;
+
+        // Check if the click is inside any circle
+        const clickedCircle = circles.find((circle) => {
+          const dx = clickX - circle.x;
+          const dy = clickY - circle.y;
+          return Math.sqrt(dx * dx + dy * dy) <= 30;
+        });
+
+        if (clickedCircle && !clickedCircle.hit) {
+          // Create an arrow towards the clicked circle
+
+          const curArrow = allArrows.find((arr) => arr.y === clickedCircle.y);
+
+          const arrow = {
+            x: curArrow.x,
+            y: curArrow.y,
+            targetX: curArrow.targetX,
+            targetY: curArrow.targetY,
+            moving: true,
+          };
+
+          arrows.splice(
+            arrows.findIndex((arr) => arr.y === clickedCircle.y),
+            1
+          );
+
+          arrows.push(arrow);
+
+          // Move the arrow towards the clicked circle
+          const animationId = setInterval(() => {
+            const dx = arrow.targetX - arrow.x;
+            const dy = arrow.targetY - arrow.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance > 5) {
+              const speed = 5;
+              const ratio = speed / distance;
+              arrow.x += dx * ratio;
+              arrow.y += dy * ratio;
+            } else {
+              clearInterval(animationId);
+              clickedCircle.hit = true;
+              clickedCircle.color = "yellow";
+            }
+
+            reDraw();
+          }, 10);
+        }
+      }
+
+      // Function to handle the reset button click
+      function resetCanvas() {
+        // Restore the initial state of the application
+        circles = [
+          { x: 100, y: 100, color: "red", hit: false },
+          { x: 100, y: 200, color: "blue", hit: false },
+          { x: 100, y: 300, color: "green", hit: false },
+          { x: 100, y: 400, color: "orange", hit: false },
+        ];
+        // circles.forEach((circle) => {
+        //   circle.color = "red";
+        //   circle.hit = false;
+        // });
+        arrows = [
+          {
+            x: 560,
+            y: 100,
+            targetX: 580,
+            targetY: 100,
+            moving: false,
+          },
+          {
+            x: 560,
+            y: 200,
+            targetX: 580,
+            targetY: 200,
+            moving: false,
+          },
+          {
+            x: 560,
+            y: 300,
+            targetX: 580,
+            targetY: 300,
+            moving: false,
+          },
+          {
+            x: 560,
+            y: 400,
+            targetX: 580,
+            targetY: 400,
+            moving: false,
+          },
+        ];
+        // Redraw the canvas
+        drawCanvas();
+      }
+      // Add click event listener to the canvas
+      canvas.addEventListener("click", handleCircleClick);
+      // Initial drawing of the canvas
+      drawCanvas();
+    </script>
+  </body>
+</html>
